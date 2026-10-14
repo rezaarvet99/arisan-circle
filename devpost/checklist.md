@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Buka index.html, tambah nama, klik bayar, undi, selesaikan — riwayat bertambah.
   Commit: `Add arisan state logic with tests`
 
-- [ ] **2. UI satu halaman lengkap**
+- [x] **2. UI satu halaman lengkap**
   Becomes usable: Satu halaman hangat Indonesia: grup, putaran, anggota, undi, selesai, riwayat, persist.
   Why now: Kernel harus terlihat dan bisa direkam 1 menit.
   PRD ref: `prd.md > Screens and Layout`, `prd.md > Look and Feel`
