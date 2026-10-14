@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="id">
+<head><meta charset="UTF-8"><title>Arisan Circle — App Map</title>
+<style>body{font-family:system-ui,sans-serif;max-width:640px;margin:24px;line-height:1.6}
+.box{border:2px solid #1f8a4c;border-radius:10px;padding:10px 14px;margin:8px 0}
+ small{color:#666}</style>
+</head>
+<body>
+<h1>Arisan Circle — App Map</h1>
+<div class="box"><b>index.html</b> — UI layer<br><small>Renders state, handles clicks. IDs: members, btnDraw, btnDone, history, newName.</small></div>
+<div style="text-align:center">⬍ reads / writes ⬍</div>
+<div class="box"><b>app.js (Arisan)</b> — state + rules<br><small>sampleData · addMember · removeMember · togglePaid · allPaid · drawRecipient (prefers never-received) · completeRound · save/load (localStorage).</small></div>
+<div style="text-align:center">⬍ verified by ⬍</div>
+<div class="box"><b>test.js</b> — 11 Node tests<br><small>Run: <code>node test.js</code>. Covers add/dupe, toggle, draw gating, round history, no-repeat draw, storage round-trip.</small></div>
+<h2>Reuse practice</h2>
+<p>Next time you build list-and-status tools (inventory, attendance, dues), copy this shape: pure state module + thin UI glue + Node tests over the state. It keeps the demo testable without a browser.</p>
+</body>
+</html>

@@ -9,7 +9,7 @@ Build mode: fast
 
 ## Slices
 
-- [ ] **1. State arisan jalan + tes hijau**
+- [x] **1. State arisan jalan + tes hijau**
   Becomes usable: Logika inti (anggota, bayar, undi, putaran, riwayat) terbukti lewat tes Node.
   Why now: Risiko inti adalah aturan arisan, bukan tampilan — buktikan dulu sebelum ada UI.
   PRD ref: `prd.md > Features and Behavior`
