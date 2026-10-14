@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arisan Circle — Pelacak Arisan</title>
+<style>
+  :root { --green:#1f8a4c; --gold:#b8860b; --cream:#faf6ef; --ink:#333; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--cream); color: var(--ink); margin: 0; padding: 16px; }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 12px; }
+  header h1 { margin: 4px 0; font-size: 1.7em; }
+  .card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+  .card h2 { margin: 0 0 8px; font-size: 1.1em; }
+  .round-no { font-size: .85em; color: #888; }
+  .recipient { font-size: 1.5em; font-weight: 700; color: var(--gold); margin: 6px 0; }
+  .progress { font-weight: 700; color: var(--green); }
+  ul.members { list-style: none; padding: 0; margin: 8px 0; }
+  ul.members li { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 8px; cursor: pointer; font-size: 1.05em; }
+  ul.members li.paid { background: #e8f7ee; border-color: var(--green); }
+  ul.members li .check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #bbb; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+  ul.members li.paid .check { background: var(--green); border-color: var(--green); color: #fff; }
+  ul.members li .nm { flex: 1; }
+  ul.members li .del { border: none; background: none; color: #c00; font-size: 1.1em; cursor: pointer; }
+  button { font-size: 1em; padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer; }
+  button.primary { background: var(--green); color: #fff; font-weight: 700; width: 100%; }
+  button.gold { background: var(--gold); color: #fff; font-weight: 700; width: 100%; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.ghost { background: none; color: #666; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; font-size: 1em; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+  .msg { color: #c00; min-height: 1.4em; font-size: .95em; }
+  .hist { font-size: .95em; }
+  .hist li { margin-bottom: 6px; }
+  .muted { color: #888; }
+  label.small { font-size: .85em; color: #666; }
+  input.inline { font-size: 1em; padding: 6px 8px; border-radius: 8px; border: 1px solid #ccc; width: 100%; margin: 2px 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="font-size:2em">🤝</div>
+    <h1>Arisan Circle</h1>
+    <div class="muted">Pelacak arisan — siapa bayar, siapa terima</div>
+  </header>
+
+  <div class="card">
+    <h2>⚙️ Grup</h2>
+    <label class="small" for="groupName">Nama grup</label>
+    <input class="inline" id="groupName" value="">
+    <label class="small" for="dues">Iuran per putaran (Rp)</label>
+    <input class="inline" id="dues" type="number" min="0" step="1000" value="">
+  </div>
+
+  <div class="card">
+    <div class="round-no" id="roundNo"></div>
+    <h2>🎁 Penerima putaran ini</h2>
+    <div class="recipient" id="recipient">—</div>
+    <button class="gold" id="btnDraw">🎲 Undi penerima</button>
+    <div class="muted" id="drawHint" style="margin-top:6px"></div>
+    <p>Progres bayar: <span class="progress" id="progress"></span></p>
+    <button class="primary" id="btnDone">✅ Putaran selesai</button>
+  </div>
+
+  <div class="card">
+    <h2>👥 Anggota</h2>
+    <ul class="members" id="members"></ul>
+    <div class="row">
+      <input id="newName" placeholder="Nama anggota baru…" maxlength="40">
+      <button class="primary" id="btnAdd" style="width:auto">＋ Tambah</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>📜 Riwayat putaran</h2>
+    <ul class="hist" id="history"></ul>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <button class="ghost" id="btnReset">↺ Mulai dari awal (data contoh)</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  let state = Arisan.load() || Arisan.sampleData();
+  const $ = (id) => document.getElementById(id);
+  const rupiah = (n) => "Rp" + Number(n || 0).toLocaleString("id-ID");
+
+  function persist() {
+    if (!Arisan.save(state)) say("Catatan: data tidak tersimpan permanen di mode ini.");
+  }
+  function say(t) { $("msg").textContent = t || ""; }
+
+  function render() {
+    $("groupName").value = state.groupName;
+    $("dues").value = state.dues;
+    $("roundNo").textContent = "Putaran #" + state.current.n +
+      " • Pot: " + rupiah(state.members.length * state.dues);
+    $("recipient").textContent = state.current.recipientId
+      ? "🎉 " + Arisan.memberName(state, state.current.recipientId) : "—";
+    const p = Arisan.progress(state);
+    $("progress").textContent = p.paid + "/" + p.total + " sudah bayar";
+    $("btnDraw").disabled = !Arisan.canDraw(state);
+    $("drawHint").textContent = Arisan.canDraw(state)
+      ? "Semua sudah bayar — silakan undi!"
+      : (state.current.recipientId ? "Penerima sudah ditentukan." : "Tandai semua anggota sudah bayar dulu.");
+    $("btnDone").disabled = !(state.current.recipientId && Arisan.allPaid(state));
+
+    const ul = $("members"); ul.innerHTML = "";
+    for (const m of state.members) {
+      const paid = state.current.paidIds.includes(m.id);
+      const li = document.createElement("li");
+      li.className = paid ? "paid" : "";
+      li.innerHTML = `<span class="check">${paid ? "✓" : ""}</span><span class="nm"></span>`;
+      li.querySelector(".nm").textContent = m.name;
+      li.title = "Klik untuk tandai bayar/belum";
+      li.onclick = () => { state = Arisan.togglePaid(state, m.id); persist(); render(); };
+      const del = document.createElement("button");
+      del.className = "del"; del.textContent = "✕"; del.title = "Hapus " + m.name;
+      del.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm("Hapus " + m.name + " dari grup?")) {
+          state = Arisan.removeMember(state, m.id); persist(); render();
+        }
+      };
+      li.appendChild(del);
+      ul.appendChild(li);
+    }
+
+    const h = $("history"); h.innerHTML = "";
+    if (!state.rounds.length) h.innerHTML = `<li class="muted">Belum ada putaran selesai.</li>`;
+    for (const r of [...state.rounds].reverse()) {
+      const li = document.createElement("li");
+      li.textContent = `Putaran #${r.n}: ${Arisan.memberName(state, r.recipientId)} terima ${rupiah(r.total)} (${r.paidIds.length} bayar)`;
+      h.appendChild(li);
+    }
+  }
+
+  $("btnAdd").onclick = () => {
+    const r = Arisan.addMember(state, $("newName").value);
+    if (!r.ok) { say(r.error); return; }
+    state = r.state; $("newName").value = ""; say(""); persist(); render();
+  };
+  $("newName").onkeydown = (e) => { if (e.key === "Enter") $("btnAdd").click(); };
+  $("btnDraw").onclick = () => {
+    const r = Arisan.drawRecipient(state);
+    if (!r.ok) { say(r.error); return; }
+    state = r.state; say(""); persist(); render();
+  };
+  $("btnDone").onclick = () => {
+    const r = Arisan.completeRound(state);
+    if (!r.ok) { say(r.error); return; }
+    state = r.state; say(""); persist(); render();
+  };
+  $("groupName").onchange = (e) => {
+    state = { ...state, groupName: Arisan.normalize(e.target.value) || state.groupName };
+    persist(); render();
+  };
+  $("dues").onchange = (e) => {
+    const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+    state = { ...state, dues: v }; persist(); render();
+  };
+  $("btnReset").onclick = () => {
+    if (confirm("Kembalikan ke data contoh? Data sekarang hilang.")) {
+      state = Arisan.sampleData(); say(""); persist(); render();
+    }
+  };
+
+  persist(); render();
+})();
+</script>
+</body>
+</html>
